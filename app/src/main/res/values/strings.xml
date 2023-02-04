@@ -1,0 +1,56 @@
+<resources>
+    <string name="app_name">Aston Course Project</string>
+    <string name="menu_characters_string">Characters</string>
+    <string name="menu_locations_string">Locations</string>
+    <string name="menu_episodes_string">Episodes</string>
+    <string name="search_hint">Start search</string>
+    <string name="filter_button_string">Filter</string>
+    <string name="species_input_label">Species</string>
+    <string name="statuses_input_label">Statuses</string>
+    <string name="gender_input_label">Gender</string>
+    <string name="type_input_label">Type</string>
+    <string name="type_input_hint">Type of character</string>
+    <string name="toolbar_menu_filter_label">Filter</string>
+    <string name="toolbar_menu_filter_clear_label">clear</string>
+    <string name="character_detail_location">Location: %1$s</string>
+    <string name="character_detail_origin">Origin: %1$s</string>
+    <string name="dimension_input_hint">Dimension</string>
+    <string name="dimension_input_label">Dimension</string>
+    <string name="episode_num_input_label">Episode Num</string>
+    <string name="episode_num_input_hint">Ex: S03E07</string>
+    <string name="character_detail_title_episodes">Episodes</string>
+    <string name="character_detail_title_locations">Position</string>
+    <string name="fragment_list_clear_filter_string">Clear filter</string>
+    <string name="detail_episode_title">Episode</string>
+    <string name="episode_detail_characters_title">Characters in episode</string>
+    <string name="detail_location_title">Location</string>
+    <string name="location_detail_residents_title">Residents</string>
+    <string name="item_is_unknown_string">Item is Unknown</string>
+    <string name="loading_failure_string">An error occurred while receiving data</string>
+    <string name="main_cache_data_failure_string">Такие данные не найдены</string>
+    <string name="main_network_data_failure_string">Данные не могут быть получены с сети, работа в локальном режиме.</string>
+
+    <string-array name="statuses_array">
+        <item> </item>
+        <item>Alive</item>
+        <item>Dead</item>
+        <item>unknown</item>
+    </string-array>
+    <string-array name="genders_array">
+        <item> </item>
+        <item>Female</item>
+        <item>Male</item>
+        <item>Genderless</item>
+        <item>unknown</item>
+    </string-array>
+
+    <string-array name="species_array">
+        <item> </item>
+        <item>Human</item>
+        <item>Alien</item>
+        <item>Humanoid</item>
+        <item>Robot</item>
+        <item>Animal</item>
+        <item>unknown</item>
+    </string-array>
+</resources>

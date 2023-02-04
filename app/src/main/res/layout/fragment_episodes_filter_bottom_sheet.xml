@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/filter_bottom_sheet_padding">
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/episode_num_input_label" />
+
+    <androidx.appcompat.widget.AppCompatEditText
+        android:id="@+id/episode_number_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/filter_bottom_sheet_input_marginTop"
+        android:hint="@string/episode_num_input_hint"
+        android:textSize="@dimen/small_text_size" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/bottom_sheet_filter_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/filter_bottom_sheet_button_marginTop"
+        android:text="@string/filter_button_string" />
+</LinearLayout>

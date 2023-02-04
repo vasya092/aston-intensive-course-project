@@ -1,0 +1,684 @@
+Index: app/src/main/java/com/example/astoncourseproject/presentation/fragments/base/BaseToolbarFilterFragment.kt
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/presentation/fragments/base/BaseToolbarFilterFragment.kt b/app/src/main/java/com/example/astoncourseproject/presentation/fragments/base/BaseToolbarFilterFragment.kt
+deleted file mode 100644
+--- a/app/src/main/java/com/example/astoncourseproject/presentation/fragments/base/BaseToolbarFilterFragment.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ /dev/null	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
+@@ -1,45 +0,0 @@
+-package com.example.astoncourseproject.presentation.fragments.base
+-
+-import android.os.Bundle
+-import android.view.Menu
+-import android.view.MenuInflater
+-import android.view.MenuItem
+-import android.view.View
+-import androidx.core.view.MenuProvider
+-import androidx.viewbinding.ViewBinding
+-import com.example.astoncourseproject.R
+-import kotlinx.coroutines.CoroutineScope
+-import kotlinx.coroutines.Dispatchers
+-import kotlin.coroutines.CoroutineContext
+-
+-abstract class BaseToolbarFilterFragment<VB: ViewBinding>(
+-    inflate: Inflate<VB>
+-): BaseFragment<VB>(inflate), CoroutineScope {
+-
+-    override val coroutineContext: CoroutineContext
+-        get() = Dispatchers.Main
+-
+-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+-        super.onViewCreated(view, savedInstanceState)
+-        val menuHost = requireActivity()
+-        menuHost.addMenuProvider( object : MenuProvider {
+-            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+-                menuInflater.inflate(R.menu.toolbar_menu, menu)
+-            }
+-
+-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+-                return when (menuItem.itemId) {
+-                    R.id.filter_list -> {
+-                        filterClickHandler()
+-                        true
+-                    }
+-                    else -> {
+-                        true
+-                    }
+-                }
+-            }
+-        }, viewLifecycleOwner)
+-    }
+-
+-    abstract fun filterClickHandler()
+-}
+\ No newline at end of file
+Index: app/src/main/java/com/example/astoncourseproject/presentation/fragments/CharactersListFragment.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/presentation/fragments/CharactersListFragment.kt b/app/src/main/java/com/example/astoncourseproject/presentation/fragments/CharactersListFragment.kt
+--- a/app/src/main/java/com/example/astoncourseproject/presentation/fragments/CharactersListFragment.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/presentation/fragments/CharactersListFragment.kt	(date 1674652286742)
+@@ -4,6 +4,7 @@
+ import android.os.Bundle
+ import android.view.*
+ import android.widget.Toast
++import androidx.core.content.ContentProviderCompat.requireContext
+ import androidx.fragment.app.activityViewModels
+ import androidx.lifecycle.coroutineScope
+ import androidx.recyclerview.widget.GridLayoutManager
+@@ -12,21 +13,23 @@
+ import com.example.astoncourseproject.databinding.FragmentCharactersListBinding
+ import com.example.astoncourseproject.di.ViewModelFactory
+ import com.example.astoncourseproject.presentation.adapters.CharacterListAdapter
+-import com.example.astoncourseproject.presentation.fragments.base.BaseToolbarFilterFragment
++import com.example.astoncourseproject.presentation.fragments.base.BaseListFragment
+ import com.example.astoncourseproject.presentation.fragments.bottomsheets.CharactersFilterBottomSheet
+ import com.example.astoncourseproject.presentation.model.Character
+ import com.example.astoncourseproject.presentation.viewmodel.CharacterListViewModel
+ import com.example.astoncourseproject.utils.onDebouncedChange
+ import kotlinx.coroutines.CoroutineScope
++import kotlinx.coroutines.GlobalScope.coroutineContext
+ import kotlinx.coroutines.launch
+ import javax.inject.Inject
+ 
+-class CharactersListFragment: BaseToolbarFilterFragment<FragmentCharactersListBinding>(
++class CharactersListFragment: BaseListFragment<FragmentCharactersListBinding>(
+     FragmentCharactersListBinding::inflate
+ ) {
+ 
+     @Inject
+     lateinit var viewModelFactory: ViewModelFactory
++
+     private val viewModel: CharacterListViewModel by activityViewModels { viewModelFactory }
+ 
+     private lateinit var adapter: CharacterListAdapter
+@@ -47,6 +50,7 @@
+         charactersFlowHandler()
+         filteredListFlowHandler()
+         searchFieldFlowHandler()
++
+         binding.searchField.setText(viewModel.searchField.value)
+ 
+         addEndOfListListener(characterLayoutManager)
+Index: app/src/main/java/com/example/astoncourseproject/domain/models/CharacterDomain.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/domain/models/CharacterDomain.kt b/app/src/main/java/com/example/astoncourseproject/domain/models/CharacterDomain.kt
+--- a/app/src/main/java/com/example/astoncourseproject/domain/models/CharacterDomain.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/domain/models/CharacterDomain.kt	(date 1674653872007)
+@@ -6,5 +6,6 @@
+     val status: String,
+     val species: String,
+     val gender: String,
++    val type: String,
+     val image: String
+ )
+Index: app/src/main/java/com/example/astoncourseproject/presentation/viewmodel/CharacterListViewModel.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/presentation/viewmodel/CharacterListViewModel.kt b/app/src/main/java/com/example/astoncourseproject/presentation/viewmodel/CharacterListViewModel.kt
+--- a/app/src/main/java/com/example/astoncourseproject/presentation/viewmodel/CharacterListViewModel.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/presentation/viewmodel/CharacterListViewModel.kt	(date 1674656251659)
+@@ -42,6 +42,9 @@
+     private var _selectedGenderFilterPosition: Int = 0
+     val selectedGenderFilterPosition get() = _selectedGenderFilterPosition
+ 
++    private var _typeFilterValue: String = ""
++    val typeFilterValue get() = _typeFilterValue
++
+     init {
+         refreshCharacterFromRepository()
+     }
+@@ -65,19 +68,22 @@
+         _searchField.value = ""
+     }
+ 
+-    fun onCharacterFindWithFilter(status: FilterItem, species: FilterItem, gender: FilterItem) {
++    fun onCharacterFindWithFilter(status: FilterItem, species: FilterItem, gender: FilterItem, type: FilterItem) {
+         _isFilterActive = true
+         _selectedStatusFilterPosition = status.itemPosition
+         _selectedSpeciesFilterPosition = species.itemPosition
+         _selectedGenderFilterPosition = gender.itemPosition
++        _typeFilterValue = type.value
+ 
+         val newFilteredList = mutableListOf<Character>()
+         viewModelScope.launch {
+-            repository.findWithFilter(status.value, species.value, gender.value)
+-            refreshCharacterFromRepository()
++            repository.findWithFilter(status.value, species.value, gender.value, type.value)
+             charactersFlow.value.map { character ->
+                 if(
+-                    status.value.equalsOrEmpty(character.status) && species.value.equalsOrEmpty(character.species) && gender.value.equalsOrEmpty(character.gender)) {
++                    status.value.equalsOrEmpty(character.status) &&
++                    species.value.equalsOrEmpty(character.species) &&
++                    gender.value.equalsOrEmpty(character.gender) &&
++                    type.value.equalsOrEmpty(character.type)) {
+                     newFilteredList.add(character)
+                 }
+             }
+Index: app/src/main/java/com/example/astoncourseproject/presentation/mappers/CharactersMappers.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/presentation/mappers/CharactersMappers.kt b/app/src/main/java/com/example/astoncourseproject/presentation/mappers/CharactersMappers.kt
+--- a/app/src/main/java/com/example/astoncourseproject/presentation/mappers/CharactersMappers.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/presentation/mappers/CharactersMappers.kt	(date 1674653898036)
+@@ -5,6 +5,6 @@
+ 
+ fun List<CharacterDomain>.asCharacterPresentationModel(): List<Character> {
+     return map {
+-        Character(it.id, it.name, it.status, it.species, it.gender, it.image)
++        Character(it.id, it.name, it.status, it.species, it.gender, it.type, it.image)
+     }
+ }
+\ No newline at end of file
+Index: app/src/main/java/com/example/astoncourseproject/presentation/model/Character.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/presentation/model/Character.kt b/app/src/main/java/com/example/astoncourseproject/presentation/model/Character.kt
+--- a/app/src/main/java/com/example/astoncourseproject/presentation/model/Character.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/presentation/model/Character.kt	(date 1674653848378)
+@@ -6,5 +6,6 @@
+     val status: String,
+     val species: String,
+     val gender: String,
++    val type: String,
+     val image: String
+ )
+Index: app/src/main/java/com/example/astoncourseproject/data/network/MortyService.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/data/network/MortyService.kt b/app/src/main/java/com/example/astoncourseproject/data/network/MortyService.kt
+--- a/app/src/main/java/com/example/astoncourseproject/data/network/MortyService.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/data/network/MortyService.kt	(date 1674654008468)
+@@ -16,7 +16,8 @@
+     suspend fun getCharactersWithFilters(
+         @Query("status") status: String,
+         @Query("species") species: String,
+-        @Query("gender") gender: String
++        @Query("gender") gender: String,
++        @Query("type") type: String
+     ): CharacterResponse
+ 
+     @GET("location")
+Index: app/src/main/res/values/dimens.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/values/dimens.xml b/app/src/main/res/values/dimens.xml
+--- a/app/src/main/res/values/dimens.xml	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/res/values/dimens.xml	(date 1674653504200)
+@@ -6,4 +6,5 @@
+     <dimen name="filter_bottom_sheet_input_marginTop">15dp</dimen>
+     <dimen name="filter_bottom_sheet_input_height">45dp</dimen>
+     <dimen name="location_list_item_marginBottom">15dp</dimen>
++    <dimen name="small_text_size">12sp</dimen>
+ </resources>
+\ No newline at end of file
+Index: app/src/main/java/com/example/astoncourseproject/presentation/model/FilterItem.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/presentation/model/FilterItem.kt b/app/src/main/java/com/example/astoncourseproject/presentation/model/FilterItem.kt
+--- a/app/src/main/java/com/example/astoncourseproject/presentation/model/FilterItem.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/presentation/model/FilterItem.kt	(date 1674654517380)
+@@ -1,7 +1,7 @@
+ package com.example.astoncourseproject.presentation.model
+ 
+ data class FilterItem(
+-    val id: Long,
++    val id: Long = 0,
+     val value: String,
+     val itemPosition: Int = 0
+ )
+Index: app/src/main/java/com/example/astoncourseproject/data/repositories/CharacterRepositoryImpl.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/data/repositories/CharacterRepositoryImpl.kt b/app/src/main/java/com/example/astoncourseproject/data/repositories/CharacterRepositoryImpl.kt
+--- a/app/src/main/java/com/example/astoncourseproject/data/repositories/CharacterRepositoryImpl.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/data/repositories/CharacterRepositoryImpl.kt	(date 1674653991819)
+@@ -57,10 +57,10 @@
+         }
+     }
+ 
+-    override suspend fun findWithFilter(status: String, species: String, gender: String) {
++    override suspend fun findWithFilter(status: String, species: String, gender: String, type: String) {
+         withContext(Dispatchers.IO) {
+             try {
+-                val foundedCharacters = mortyService.getCharactersWithFilters(status, species, gender).results.asCharacterEntity()
++                val foundedCharacters = mortyService.getCharactersWithFilters(status, species, gender, type).results.asCharacterEntity()
+                 localDatabaseDao.insertCharacter(foundedCharacters)
+             } catch (e: Exception) {
+                 Log.e("TAG", e.message.toString())
+Index: app/src/main/res/layout/fragment_locations_list.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/layout/fragment_locations_list.xml b/app/src/main/res/layout/fragment_locations_list.xml
+--- a/app/src/main/res/layout/fragment_locations_list.xml	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/res/layout/fragment_locations_list.xml	(date 1674652373341)
+@@ -12,7 +12,7 @@
+         android:hint="@string/search_hint"
+         />
+     <androidx.recyclerview.widget.RecyclerView
+-        android:id="@+id/locations_list_recycler"
++        android:id="@+id/list_recycler"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         app:layout_constraintStart_toStartOf="parent"
+Index: app/src/main/res/layout/fragment_characters_filter_bottom_sheet.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/layout/fragment_characters_filter_bottom_sheet.xml b/app/src/main/res/layout/fragment_characters_filter_bottom_sheet.xml
+--- a/app/src/main/res/layout/fragment_characters_filter_bottom_sheet.xml	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/res/layout/fragment_characters_filter_bottom_sheet.xml	(date 1674653538102)
+@@ -13,7 +13,6 @@
+         android:id="@+id/statuses_selector"
+         android:layout_marginTop="@dimen/filter_bottom_sheet_input_marginTop"
+         android:layout_width="match_parent"
+-
+         android:layout_height="@dimen/filter_bottom_sheet_input_height"
+         />
+     <androidx.appcompat.widget.AppCompatTextView
+@@ -38,6 +37,19 @@
+         android:layout_width="match_parent"
+         android:layout_height="@dimen/filter_bottom_sheet_input_height"
+         />
++    <androidx.appcompat.widget.AppCompatTextView
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:text="@string/type_input_label"
++        />
++    <androidx.appcompat.widget.AppCompatEditText
++        android:id="@+id/type_input"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:hint="@string/type_input_hint"
++        android:textSize="@dimen/small_text_size"
++        android:layout_marginTop="@dimen/filter_bottom_sheet_input_marginTop"
++        />
+     <androidx.appcompat.widget.AppCompatButton
+         android:id="@+id/bottom_sheet_filter_button"
+         android:layout_width="wrap_content"
+Index: app/src/main/java/com/example/astoncourseproject/data/dto/character/CharacterEntity.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/data/dto/character/CharacterEntity.kt b/app/src/main/java/com/example/astoncourseproject/data/dto/character/CharacterEntity.kt
+--- a/app/src/main/java/com/example/astoncourseproject/data/dto/character/CharacterEntity.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/data/dto/character/CharacterEntity.kt	(date 1674654058053)
+@@ -11,13 +11,6 @@
+     val status: String,
+     val species: String,
+     val gender: String,
++    val type: String,
+     val image: String
+-)
+-
+-@Entity(tableName = "user")
+-data class Users(
+-    @PrimaryKey(autoGenerate = true)
+-    var userId: Int? = null,
+-    val userName: String,
+-    var location: String,
+-    val email: String)
+\ No newline at end of file
++)
+\ No newline at end of file
+Index: app/src/main/java/com/example/astoncourseproject/presentation/viewmodel/LocationsListViewModel.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/presentation/viewmodel/LocationsListViewModel.kt b/app/src/main/java/com/example/astoncourseproject/presentation/viewmodel/LocationsListViewModel.kt
+--- a/app/src/main/java/com/example/astoncourseproject/presentation/viewmodel/LocationsListViewModel.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/presentation/viewmodel/LocationsListViewModel.kt	(date 1674652865748)
+@@ -15,7 +15,7 @@
+ 
+     private var currentPage = 1
+ 
+-    val locationsFlow: StateFlow<List<LocationItem>> = repository.locations.map { locationsList ->
++    val itemsFlow: StateFlow<List<LocationItem>> = repository.locations.map { locationsList ->
+         locationsList.asLocationItem()
+     }.stateIn(
+         scope = viewModelScope,
+@@ -32,6 +32,10 @@
+     private var _isFilterActive: Boolean = false
+     val isFilterActive get() = _isFilterActive
+ 
++    init {
++        refreshLocationsFromRepository()
++    }
++
+     private fun refreshLocationsFromRepository() = viewModelScope.launch {
+         try {
+             repository.refreshLocationsDatabase()
+@@ -40,7 +44,7 @@
+         }
+     }
+ 
+-    fun onLocationFindByName(name: String) {
++    fun onFindByName(name: String) {
+         _searchField.value = name
+         viewModelScope.launch {
+             repository.findByName(name)
+Index: app/src/main/java/com/example/astoncourseproject/presentation/fragments/bottomsheets/CharactersFilterBottomSheet.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/presentation/fragments/bottomsheets/CharactersFilterBottomSheet.kt b/app/src/main/java/com/example/astoncourseproject/presentation/fragments/bottomsheets/CharactersFilterBottomSheet.kt
+--- a/app/src/main/java/com/example/astoncourseproject/presentation/fragments/bottomsheets/CharactersFilterBottomSheet.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/presentation/fragments/bottomsheets/CharactersFilterBottomSheet.kt	(date 1674654511417)
+@@ -12,6 +12,7 @@
+ import com.example.astoncourseproject.databinding.FragmentCharactersFilterBottomSheetBinding
+ import com.example.astoncourseproject.di.ViewModelFactory
+ import com.example.astoncourseproject.presentation.fragments.base.BaseFilterBottomSheetFragment
++import com.example.astoncourseproject.presentation.model.FilterItem
+ import com.example.astoncourseproject.presentation.viewmodel.CharacterListViewModel
+ import com.example.astoncourseproject.utils.fillFromArray
+ import com.example.astoncourseproject.utils.getFilterItem
+@@ -74,7 +75,8 @@
+             val species = speciesSelector.getFilterItem()
+             val status = statusesSelector.getFilterItem()
+             val gender = gendersSelector.getFilterItem()
+-            viewModel.onCharacterFindWithFilter(status, species, gender)
++            val type = FilterItem(value = typeInput.text.toString())
++            viewModel.onCharacterFindWithFilter(status, species, gender, type)
+         }
+         viewModel.clearNameField()
+         dismiss()
+Index: app/src/main/java/com/example/astoncourseproject/domain/CharacterRepository.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/domain/CharacterRepository.kt b/app/src/main/java/com/example/astoncourseproject/domain/CharacterRepository.kt
+--- a/app/src/main/java/com/example/astoncourseproject/domain/CharacterRepository.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/domain/CharacterRepository.kt	(date 1674653956638)
+@@ -14,5 +14,5 @@
+ 
+     suspend fun findByName(characterName: String)
+ 
+-    suspend fun findWithFilter(status: String, species: String, gender: String)
++    suspend fun findWithFilter(status: String, species: String, gender: String, type: String)
+ }
+\ No newline at end of file
+Index: app/src/main/java/com/example/astoncourseproject/presentation/fragments/EpisodesListFragment.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/presentation/fragments/EpisodesListFragment.kt b/app/src/main/java/com/example/astoncourseproject/presentation/fragments/EpisodesListFragment.kt
+--- a/app/src/main/java/com/example/astoncourseproject/presentation/fragments/EpisodesListFragment.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/presentation/fragments/EpisodesListFragment.kt	(date 1674647134403)
+@@ -4,9 +4,9 @@
+ import android.view.View
+ import android.widget.Toast
+ import com.example.astoncourseproject.databinding.FragmentEpisodesListBinding
+-import com.example.astoncourseproject.presentation.fragments.base.BaseToolbarFilterFragment
++import com.example.astoncourseproject.presentation.fragments.base.BaseListFragment
+ 
+-class EpisodesListFragment: BaseToolbarFilterFragment<FragmentEpisodesListBinding>(
++class EpisodesListFragment: BaseListFragment<FragmentEpisodesListBinding>(
+     FragmentEpisodesListBinding::inflate
+ ) {
+     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+Index: app/src/main/java/com/example/astoncourseproject/data/local/LocalDataBase.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/data/local/LocalDataBase.kt b/app/src/main/java/com/example/astoncourseproject/data/local/LocalDataBase.kt
+--- a/app/src/main/java/com/example/astoncourseproject/data/local/LocalDataBase.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/data/local/LocalDataBase.kt	(date 1674654803285)
+@@ -8,7 +8,7 @@
+ import com.example.astoncourseproject.data.dto.character.CharacterEntity
+ import com.example.astoncourseproject.data.dto.location.LocationEntity
+ 
+-@Database(entities = [CharacterEntity::class, LocationEntity::class], version = 2)
++@Database(entities = [CharacterEntity::class, LocationEntity::class], version = 3)
+ @TypeConverters(Converters::class)
+ abstract class LocalDatabase: RoomDatabase() {
+     abstract fun localDataBaseDao(): LocalDatabaseDao
+Index: app/src/main/java/com/example/astoncourseproject/presentation/fragments/LocationsListFragment.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/presentation/fragments/LocationsListFragment.kt b/app/src/main/java/com/example/astoncourseproject/presentation/fragments/LocationsListFragment.kt
+--- a/app/src/main/java/com/example/astoncourseproject/presentation/fragments/LocationsListFragment.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/presentation/fragments/LocationsListFragment.kt	(date 1674652836548)
+@@ -12,7 +12,7 @@
+ import com.example.astoncourseproject.databinding.FragmentLocationsListBinding
+ import com.example.astoncourseproject.di.ViewModelFactory
+ import com.example.astoncourseproject.presentation.adapters.LocationListAdapter
+-import com.example.astoncourseproject.presentation.fragments.base.BaseToolbarFilterFragment
++import com.example.astoncourseproject.presentation.fragments.base.BaseListFragment
+ import com.example.astoncourseproject.presentation.model.LocationItem
+ import com.example.astoncourseproject.presentation.viewmodel.LocationsListViewModel
+ import com.example.astoncourseproject.utils.onDebouncedChange
+@@ -20,7 +20,7 @@
+ import kotlinx.coroutines.launch
+ import javax.inject.Inject
+ 
+-class LocationsListFragment: BaseToolbarFilterFragment<FragmentLocationsListBinding>(
++class LocationsListFragment: BaseListFragment<FragmentLocationsListBinding>(
+     FragmentLocationsListBinding::inflate
+ ) {
+ 
+@@ -30,10 +30,6 @@
+ 
+     private lateinit var adapter: LocationListAdapter
+ 
+-    override fun filterClickHandler() {
+-        Toast.makeText(requireContext(), "Locations",Toast.LENGTH_SHORT).show()
+-    }
+-
+     override fun onAttach(context: Context) {
+         val component = (requireActivity().application as BaseApplication).appComponent
+         component.inject(this)
+@@ -42,26 +38,48 @@
+ 
+     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+         super.onViewCreated(view, savedInstanceState)
+-        val locationsListLayoutManager = GridLayoutManager(requireContext(), 2)
++
++        val layoutManager = GridLayoutManager(requireContext(), 2)
++        binding.listRecycler.layoutManager = layoutManager
+         adapter = LocationListAdapter()
+-        with(binding) {
+-            locationsListRecycler.layoutManager = locationsListLayoutManager
+-            locationsFlowHandler()
+-            filteredListFlowHandler()
+-            searchFieldFlowHandler()
+-            searchField.setText(viewModel.searchField.value)
+-            addEndOfListListener(locationsListLayoutManager)
+-            searchField.onDebouncedChange(CoroutineScope(coroutineContext)) {
+-                viewModel.onLocationFindByName(it)
++
++        itemsFlowHandler()
++        filteredListFlowHandler()
++        searchFieldFlowHandler()
++
++        binding.searchField.setText(viewModel.searchField.value)
++
++        addEndOfListListener(layoutManager)
++
++        binding.searchField.onDebouncedChange(CoroutineScope(coroutineContext)) {
++            viewModel.onFindByName(it)
++        }
++
++        binding.listRecycler.adapter = adapter
++    }
++
++    private fun findByName(name: String) {
++        val filteredList = mutableListOf<LocationItem>()
++        if(!viewModel.isFilterActive) {
++            viewModel.itemsFlow.value.forEach { item ->
++                if (item.name.lowercase().contains(name.lowercase())) {
++                    filteredList.add(item)
++                }
+             }
+-            locationsListRecycler.adapter = adapter
++        } else {
++            viewModel.filteredList.value.forEach{ item ->
++                if (item.name.lowercase().contains(name.lowercase())) {
++                    filteredList.add(item)
++                }
++            }
+         }
++        adapter.submitList(filteredList)
+     }
+ 
+-    private fun locationsFlowHandler() {
++    private fun itemsFlowHandler() {
+         lifecycle.coroutineScope.launch{
+-            viewModel.locationsFlow.collect() { locationList ->
+-                adapter.submitList(locationList)
++            viewModel.itemsFlow.collect() { itemsList ->
++                adapter.submitList(itemsList)
+                 searchFieldFlowHandler()
+             }
+         }
+@@ -69,9 +87,9 @@
+ 
+     private fun filteredListFlowHandler() {
+         lifecycle.coroutineScope.launch{
+-            viewModel.filteredList.collect() { locationsList ->
+-                if(locationsList.isNotEmpty()) {
+-                    adapter.submitList(locationsList)
++            viewModel.filteredList.collect() { itemsList ->
++                if(itemsList.isNotEmpty()) {
++                    adapter.submitList(itemsList)
+                 }
+             }
+         }
+@@ -88,34 +106,21 @@
+         }
+     }
+ 
+-    private fun findByName(name: String) {
+-        val filteredList = mutableListOf<LocationItem>()
+-        if(!viewModel.isFilterActive) {
+-            viewModel.locationsFlow.value.forEach { location ->
+-                if (location.name.lowercase().contains(name.lowercase())) {
+-                    filteredList.add(location)
+-                }
+-            }
+-        } else {
+-            viewModel.filteredList.value.forEach{ location ->
+-                if (location.name.lowercase().contains(name.lowercase())) {
+-                    filteredList.add(location)
+-                }
+-            }
+-        }
+-        adapter.submitList(filteredList)
+-    }
+-
+     private fun addEndOfListListener(layoutManager: GridLayoutManager) {
+-        binding.locationsListRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
++        binding.listRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+-                super.onScrollStateChanged(recyclerView, newState)
+-                val lastPosition = layoutManager.findLastVisibleItemPosition()
+-                if(lastPosition == adapter.itemCount-1){
+-                    Toast.makeText(requireContext(), "Загрузка", Toast.LENGTH_SHORT).show()
+-                    viewModel.onListScrolled()
++                if(!viewModel.isFilterActive) {
++                    super.onScrollStateChanged(recyclerView, newState)
++                    val lastPosition = layoutManager.findLastVisibleItemPosition()
++                    if(lastPosition == adapter.itemCount-1){
++                        Toast.makeText(requireContext(), "Загрузка", Toast.LENGTH_SHORT).show()
++                        viewModel.onListScrolled()
++                    }
+                 }
+             }
+         })
+     }
++
++    override fun filterClickHandler() {
++    }
+ }
+\ No newline at end of file
+Index: app/src/main/res/values/strings.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+--- a/app/src/main/res/values/strings.xml	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/res/values/strings.xml	(date 1674653525941)
+@@ -8,6 +8,8 @@
+     <string name="species_input_label">Species</string>
+     <string name="statuses_input_label">Statuses</string>
+     <string name="gender_input_label">Gender</string>
++    <string name="type_input_label">Type</string>
++    <string name="type_input_hint">Type of character</string>
+ 
+     <string-array name="statuses_array">
+         <item> </item>
+Index: app/src/main/java/com/example/astoncourseproject/data/dto/character/CharacterDto.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/data/dto/character/CharacterDto.kt b/app/src/main/java/com/example/astoncourseproject/data/dto/character/CharacterDto.kt
+--- a/app/src/main/java/com/example/astoncourseproject/data/dto/character/CharacterDto.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/data/dto/character/CharacterDto.kt	(date 1674654030808)
+@@ -6,5 +6,6 @@
+     val status: String,
+     val species: String,
+     val gender: String,
++    val type: String,
+     val image: String
+ )
+Index: app/src/main/java/com/example/astoncourseproject/data/mappers/CharactersMappers.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/astoncourseproject/data/mappers/CharactersMappers.kt b/app/src/main/java/com/example/astoncourseproject/data/mappers/CharactersMappers.kt
+--- a/app/src/main/java/com/example/astoncourseproject/data/mappers/CharactersMappers.kt	(revision 47d0ac280d57a34563d2fc2c2db336ce33717e22)
++++ b/app/src/main/java/com/example/astoncourseproject/data/mappers/CharactersMappers.kt	(date 1674654088650)
+@@ -6,18 +6,18 @@
+ 
+ fun List<CharacterDto>.asCharacterEntity(): List<CharacterEntity> {
+     return map {
+-        CharacterEntity(it.id, it.name,it.status,it.species, it.gender, it.image)
++        CharacterEntity(it.id, it.name,it.status,it.species, it.gender, it.type, it.image)
+     }
+ }
+ 
+ fun List<CharacterEntity>.asCharacterDomain(): List<CharacterDomain> {
+     return map {
+-        CharacterDomain(it.id, it.name,it.status,it.species, it.gender, it.image)
++        CharacterDomain(it.id, it.name,it.status,it.species, it.gender, it.type, it.image)
+     }
+ }
+ 
+ fun List<CharacterDto>.dtoAsCharacterDomain(): List<CharacterDomain> {
+     return map {
+-        CharacterDomain(it.id, it.name,it.status,it.species, it.gender, it.image)
++        CharacterDomain(it.id, it.name,it.status,it.species, it.gender, it.type, it.image)
+     }
+ }
+\ No newline at end of file
